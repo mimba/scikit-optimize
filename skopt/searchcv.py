@@ -18,9 +18,13 @@ from .utils import point_asdict, dimensions_aslist, eval_callbacks
 from .space import check_dimension
 from .callbacks import check_callback
 
+from .ext import weighted_validation
 
-class BayesSearchCV(BaseSearchCV):
+
+class WeightedBayesSearchCV(BaseSearchCV):
     """Bayesian optimization over hyper parameters.
+
+    In addition to scikit-optimize's version this fork implementes sample_weights.
 
     BayesSearchCV implements a "fit" and a "score" method.
     It also implements "predict", "predict_proba", "decision_function",
@@ -290,7 +294,7 @@ class BayesSearchCV(BaseSearchCV):
         self.optimizer_kwargs = optimizer_kwargs
         self._check_search_space(self.search_spaces)
 
-        super(BayesSearchCV, self).__init__(
+        super(WeightedBayesSearchCV, self).__init__(
              estimator=estimator, scoring=scoring, fit_params=fit_params,
              n_jobs=n_jobs, iid=iid, refit=refit, cv=cv, verbose=verbose,
              pre_dispatch=pre_dispatch, error_score=error_score,
@@ -362,7 +366,7 @@ class BayesSearchCV(BaseSearchCV):
         return self.cv_results_['params'][self.best_index_]
 
     # copied for compatibility with 0.19 sklearn from 0.18 BaseSearchCV
-    def _fit(self, X, y, groups, parameter_iterable):
+    def _fit(self, X, y, sample_weight, sample_weight_steps, groups, parameter_iterable):
         """
         Actual fitting,  performing the search over parameters.
         Taken from https://github.com/scikit-learn/scikit-learn/blob/0.18.X
@@ -370,12 +374,13 @@ class BayesSearchCV(BaseSearchCV):
         """
 
         estimator = self.estimator
-        cv = sklearn.model_selection._validation.check_cv(
+        # skelarn.model_selection.validation.check_cv
+        cv = sklearn.model_selection.check_cv(
             self.cv, y, classifier=is_classifier(estimator))
         self.scorer_ = check_scoring(
             self.estimator, scoring=self.scoring)
 
-        X, y, groups = indexable(X, y, groups)
+        X, y, sample_weight, groups = indexable(X, y, sample_weight, groups)
         n_splits = cv.get_n_splits(X, y, groups)
         if self.verbose > 0 and isinstance(parameter_iterable, Sized):
             n_candidates = len(parameter_iterable)
@@ -390,9 +395,11 @@ class BayesSearchCV(BaseSearchCV):
         out = Parallel(
             n_jobs=self.n_jobs, verbose=self.verbose,
             pre_dispatch=pre_dispatch
-        )(delayed(sklearn.model_selection._validation._fit_and_score)(
+        )(delayed(weighted_validation._fit_and_score)(
                 clone(base_estimator),
-                X, y, self.scorer_,
+                X, y,
+                sample_weight, sample_weight_steps,
+                self.scorer_,
                 train, test, self.verbose, parameters,
                 fit_params=self.fit_params,
                 return_train_score=self.return_train_score,
@@ -481,14 +488,21 @@ class BayesSearchCV(BaseSearchCV):
             # clone first to work around broken estimators
             best_estimator = clone(base_estimator).set_params(
                 **best_parameters)
-            if y is not None:
+            if y is not None and sample_weight is not None:
+                if sample_weight is not None:
+                    if not self.fit_params:
+                        self.fit_params = {}
+                    for step in sample_weight_steps:
+                        self.fit_params[step + '__sample_weight'] = sample_weight
+                best_estimator.fit(X, y, **self.fit_params)
+            elif y is not None:
                 best_estimator.fit(X, y, **self.fit_params)
             else:
                 best_estimator.fit(X, **self.fit_params)
             self.best_estimator_ = best_estimator
         return self
 
-    def _fit_best_model(self, X, y):
+    def _fit_best_model(self, X, y, sample_weight=None, sample_weight_steps=None):
         """Fit the estimator copy with best parameters found to the
         provided data.
 
@@ -501,13 +515,31 @@ class BayesSearchCV(BaseSearchCV):
         y : array-like, shape = [n_samples] or [n_samples, n_output],
             Target relative to X for classification or regression.
 
+        sample_weight: array-like, shape = [n_samples], optional
+
+        sample_weight_steps: array-like, required if sample_weight given, default: None
+            Must be provided if sample_weight are given.
+            Indicates all steps of the pipeline which apply the sample_weight.
+            E.g: steps_l1_xgb = [
+                ('nan', MissingNumbersTransformer(..)),
+                ('lgbm', LGBMRegressor(..))
+            ]
+            Then one may provide the steps ['lgbm'] such that only the pipeline step named 'lgbm' becomes passed the sample_weight as fit_param
+
         Returns
         -------
         self
         """
         self.best_estimator_ = clone(self.estimator)
         self.best_estimator_.set_params(**self.best_params_)
-        self.best_estimator_.fit(X, y, **(self.fit_params or {}))
+        fit_params = self.fit_params
+        if sample_weight is not None:
+            if not fit_params:
+                fit_params = {}
+            for step in sample_weight_steps:
+                fit_params[step + '__sample_weight'] = sample_weight
+
+        self.best_estimator_.fit(X, y, **(fit_params or {}))
         return self
 
     def _make_optimizer(self, params_space):
@@ -533,7 +565,7 @@ class BayesSearchCV(BaseSearchCV):
 
         return optimizer
 
-    def _step(self, X, y, search_space, optimizer, groups=None, n_points=1):
+    def _step(self, X, y, sample_weight, sample_weight_steps, search_space, optimizer, groups=None, n_points=1):
         """Generate n_jobs parameters and evaluate them in parallel.
         """
 
@@ -552,7 +584,7 @@ class BayesSearchCV(BaseSearchCV):
         # HACK: this adds compatibility with different versions of sklearn
         refit = self.refit
         self.refit = False
-        self._fit(X, y, groups, params_dict)
+        self._fit(X, y, sample_weight, sample_weight_steps, groups, params_dict)
         self.refit = refit
 
         # merge existing and new cv_results_
@@ -591,7 +623,7 @@ class BayesSearchCV(BaseSearchCV):
 
         return total_iter
 
-    def fit(self, X, y=None, groups=None, callback=None):
+    def fit(self, X, y=None, sample_weight=None, sample_weight_steps=None, groups=None, callback=None):
         """Run fit on the estimator with randomly drawn parameters.
 
         Parameters
@@ -602,6 +634,17 @@ class BayesSearchCV(BaseSearchCV):
         y : array-like, shape = [n_samples] or [n_samples, n_output]
             Target relative to X for classification or regression (class
             labels should be integers or strings).
+
+        sample_weight: array-like, shape = [n_samples], optional
+
+        sample_weight_steps: array-like, required if sample_weight given, default: None
+            Must be provided if sample_weight are given.
+            Indicates all steps of the pipeline which apply the sample_weight.
+            E.g: steps_l1_xgb = [
+                ('nan', MissingNumbersTransformer(..)),
+                ('lgbm', LGBMRegressor(..))
+            ]
+            Then one may provide the steps ['lgbm'] such that only the pipeline step named 'lgbm' becomes passed the sample_weight as fit_param
 
         groups : array-like, with shape (n_samples,), optional
             Group labels for the samples used while splitting the dataset into
@@ -655,7 +698,9 @@ class BayesSearchCV(BaseSearchCV):
                 n_points_adjusted = min(n_iter, n_points)
 
                 optim_result = self._step(
-                    X, y, search_space, optimizer,
+                    X, y,
+                    sample_weight, sample_weight_steps,
+                    search_space, optimizer,
                     groups=groups, n_points=n_points_adjusted
                 )
                 n_iter -= n_points
@@ -665,6 +710,6 @@ class BayesSearchCV(BaseSearchCV):
 
         # Refit the best model on the the whole dataset
         if self.refit:
-            self._fit_best_model(X, y)
+            self._fit_best_model(X, y, sample_weight, sample_weight_steps)
 
         return self

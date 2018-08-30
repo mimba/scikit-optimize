@@ -2,21 +2,19 @@
 search with interface similar to those of GridSearchCV
 """
 
+import numpy as np
 import pytest
-import time
-
-from sklearn.utils.testing import assert_greater
+from sklearn.base import BaseEstimator
+from sklearn.base import clone
 from sklearn.datasets import load_iris, make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.base import clone
-from sklearn.base import BaseEstimator
-from sklearn.externals.joblib import cpu_count
+from sklearn.utils.testing import assert_greater
 
+from skopt import WeightedBayesSearchCV
 from skopt.space import Real, Categorical, Integer
-from skopt import BayesSearchCV
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):
@@ -28,7 +26,7 @@ def _fit_svc(n_jobs=1, n_points=1, cv=None):
                                n_informative=18, random_state=1,
                                n_clusters_per_class=1)
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         SVC(),
         {
             'C': Real(1e-3, 1e+3, prior='log-uniform'),
@@ -43,18 +41,46 @@ def _fit_svc(n_jobs=1, n_points=1, cv=None):
     assert_greater(opt.score(X, y), 0.9)
 
 
+def _fit_weighted_cv(n_jobs=1, n_points=1, cv=None):
+    """
+    Utility function to fit a larger classification task with SVC and randomly filled weighted samples
+    :return score
+    """
+
+    X, y = make_classification(n_samples=1000, n_features=20, n_redundant=0,
+                                              n_informative=18, random_state=1,
+                                              n_clusters_per_class=1)
+
+    sample_weight = np.random.rand(len(y))
+    pipeline = Pipeline(
+        [('estimator',SVC())])
+    opt = WeightedBayesSearchCV(
+        pipeline,
+        {
+            'estimator__C': Real(1e-3, 1e+3, prior='log-uniform'),
+            'estimator__gamma': Real(1e-3, 1e+1, prior='log-uniform'),
+            'estimator__degree': Integer(1, 3),
+        },
+        n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
+    )
+    opt.fit(X, y, sample_weight=sample_weight, sample_weight_steps=['estimator'])
+    score = opt.score(X, y)
+    assert_greater(score, 0.9)
+    return score
+
+
 def test_raise_errors():
 
     # check if empty search space is raising errors
     with pytest.raises(ValueError):
-        BayesSearchCV(SVC(), {})
+        WeightedBayesSearchCV(SVC(), {})
 
     # check if invalid dimensions are raising errors
     with pytest.raises(ValueError):
-        BayesSearchCV(SVC(), {'C': '1 ... 100.0'})
+        WeightedBayesSearchCV(SVC(), {'C': '1 ... 100.0'})
 
     with pytest.raises(TypeError):
-        BayesSearchCV(SVC(), ['C', (1.0, 1)])
+        WeightedBayesSearchCV(SVC(), ['C', (1.0, 1)])
 
 
 @pytest.mark.parametrize("surrogate", ['gp', None])
@@ -90,7 +116,7 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
     else:
         optimizer_kwargs = None
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         SVC(),
         {
             'C': Real(1e-6, 1e+6, prior='log-uniform'),
@@ -111,13 +137,25 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
 
 @pytest.mark.slow_test
 def test_parallel_cv():
-
     """
     Test whether parallel jobs work
     """
-
     _fit_svc(n_jobs=1, cv=5)
     _fit_svc(n_jobs=2, cv=5)
+
+
+@pytest.mark.slow_test
+def test_parallel_weighted_cv():
+    """
+    Test whether parallel weighted cv jobs work and produce different results because of different sample_weight.
+    Attention: This test may fail under extreme random sampling conditions
+    """
+    score_1 = _fit_weighted_cv(n_jobs=1, cv=5)
+    score_2 = _fit_weighted_cv(n_jobs=1, cv=5)
+    score_3 = _fit_weighted_cv(n_jobs=1, cv=5)
+    assert score_1 != score_2 or score_1 != score_3
+    assert score_1 == pytest.approx(score_2, 0.1)
+    assert score_1 == pytest.approx(score_3, 0.1)
 
 
 def test_searchcv_runs_multiple_subspaces():
@@ -156,7 +194,7 @@ def test_searchcv_runs_multiple_subspaces():
         'model__kernel': Categorical(['linear', 'poly', 'rbf']),
     }
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         pipe,
         [(lin_search, 1), (dtc_search, 1), svc_search],
         n_iter=2
@@ -167,6 +205,71 @@ def test_searchcv_runs_multiple_subspaces():
     # test if all subspaces are explored
     total_evaluations = len(opt.cv_results_['mean_test_score'])
     assert total_evaluations == 1+1+2, "Not all spaces were explored!"
+
+
+def test_searchcv_sklearn_sample_weight_compatibility():
+    """
+    Test whether the BayesSearchCV is compatible with sklearn methods having sample weights integrated.
+    """
+    X, y = load_iris(True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=0.75, random_state=0
+    )
+
+    # used to try different model classes
+    pipe = Pipeline([
+        ('model', SVC())
+    ])
+
+    # single categorical value of 'model' parameter sets the model class
+    lin_search = {
+        'model': Categorical([LinearSVC()]),
+        'model__C': Real(1e-6, 1e+6, prior='log-uniform'),
+    }
+
+    dtc_search = {
+        'model': Categorical([DecisionTreeClassifier()]),
+        'model__max_depth': Integer(1, 32),
+        'model__min_samples_split': Real(1e-3, 1.0, prior='log-uniform'),
+    }
+
+    svc_search = {
+        'model': Categorical([SVC()]),
+        'model__C': Real(1e-6, 1e+6, prior='log-uniform'),
+        'model__gamma': Real(1e-6, 1e+1, prior='log-uniform'),
+        'model__degree': Integer(1, 8),
+        'model__kernel': Categorical(['linear', 'poly', 'rbf']),
+    }
+
+    opt = WeightedBayesSearchCV(
+        pipe,
+        [(lin_search, 1), svc_search],
+        n_iter=2
+    )
+
+    opt_clone = clone(opt)
+
+    params, params_clone = opt.get_params(), opt_clone.get_params()
+    assert params.keys() == params_clone.keys()
+
+    for param, param_clone in zip(params.items(), params_clone.items()):
+        assert param[0] == param_clone[0]
+        assert isinstance(param[1], type(param_clone[1]))
+
+    opt.set_params(search_spaces=[(dtc_search, 1)])
+
+    sample_weight = np.random.rand(len(y_train))
+
+    opt.fit(X_train, y_train, sample_weight=sample_weight, sample_weight_steps=['model'])
+    opt_clone.fit(X_train, y_train, sample_weight=sample_weight, sample_weight_steps=['model'])
+
+    total_evaluations = len(opt.cv_results_['mean_test_score'])
+    total_evaluations_clone = len(opt_clone.cv_results_['mean_test_score'])
+
+    # test if expected number of subspaces is explored
+    assert total_evaluations == 1
+    assert total_evaluations_clone == 1 + 2
+
 
 
 def test_searchcv_sklearn_compatibility():
@@ -205,7 +308,7 @@ def test_searchcv_sklearn_compatibility():
         'model__kernel': Categorical(['linear', 'poly', 'rbf']),
     }
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         pipe,
         [(lin_search, 1), svc_search],
         n_iter=2
@@ -246,7 +349,7 @@ def test_searchcv_reproducibility():
 
     random_state = 42
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         SVC(random_state=random_state),
         {
             'C': Real(1e-6, 1e+6, prior='log-uniform'),
@@ -274,7 +377,7 @@ def test_searchcv_callback():
     # whether is can be used to interrupt the search loop
 
     X, y = load_iris(True)
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         DecisionTreeClassifier(),
         {
             'max_depth': [3],  # additional test for single dimension
@@ -305,7 +408,7 @@ def test_searchcv_callback():
 def test_searchcv_total_iterations():
     # Test the total iterations counting property of BayesSearchCV
 
-    opt = BayesSearchCV(
+    opt = WeightedBayesSearchCV(
         DecisionTreeClassifier(),
         [
             ({'max_depth': (1, 32)}, 10),  # 10 iterations here
@@ -342,7 +445,7 @@ def test_search_cv_internal_parameter_types():
     # Below is example code that used to not work.
     X, y = make_classification(10, 4)
 
-    model = BayesSearchCV(
+    model = WeightedBayesSearchCV(
         estimator=TypeCheckEstimator(),
         search_spaces={
             'float_param': [0.0, 1.0],
