@@ -5,14 +5,14 @@ except ImportError:
 import versioneer
 
 
-setup(name='scikit-optimize',
+setup(name='scikit-optimize-w',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
-      description='Sequential model-based optimization toolbox.',
+      description='Fork of scikit-optimize - Sequential model-based optimization toolbox - extended with sample weights',
       long_description=open('README.rst').read(),
-      url='https://scikit-optimize.github.io/',
+      url='https://github.com/mimba/scikit-optimize',
       license='BSD',
-      author='The scikit-optimize contributors',
+      author='The scikit-optimize contributors and mimba',
       packages=['skopt', 'skopt.learning', 'skopt.optimizer', 'skopt.space',
                 'skopt.learning.gaussian_process'],
       install_requires=['pyaml', 'numpy', 'scipy>=0.14.0',

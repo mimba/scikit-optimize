@@ -1,11 +1,11 @@
 |Logo|
 
-|Travis Status| |CircleCI Status| |binder| |gitter| |Zenodo DOI|
+|Travis Status|
 
-Scikit-Optimize
-===============
+Scikit-Optimize-W
+============
 
-Scikit-Optimize, or ``skopt``, is a simple and efficient library to
+Scikit-Optimize-W is a fork of Scikit-Optimize or ``skopt`` which is a simple and efficient library to
 minimize (very) expensive and noisy black-box functions. It implements
 several methods for sequential model-based optimization. ``skopt`` aims
 to be accessible and easy to use in many contexts.
