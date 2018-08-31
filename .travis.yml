@@ -10,7 +10,7 @@ cache:
 env:
   matrix:
     - DISTRIB="conda" PYTHON_VERSION="3.5" COVERAGE="true"
-    - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="true"
+    - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
 
 install: source build_tools/travis/install.sh
 
