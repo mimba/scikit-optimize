@@ -115,7 +115,7 @@ The development version can be installed through:
 
 ::
 
-    git clone https://github.com/scikit-optimize/scikit-optimize.git
+    git clone https://github.com/mimba/scikit-optimize.git
     cd scikit-optimize
     pip install -e.
 

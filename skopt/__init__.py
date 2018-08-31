@@ -4,12 +4,12 @@ minimize (very) expensive and noisy black-box functions. It implements
 several methods for sequential model-based optimization. `skopt` is reusable
 in many contexts and accessible.
 
-[![Build Status](https://travis-ci.org/scikit-optimize/scikit-optimize.svg?branch=master)](https://travis-ci.org/scikit-optimize/scikit-optimize)
+[![Build Status](https://travis-ci.org/mimba/scikit-optimize.svg?branch=master)](https://travis-ci.org/mimba/scikit-optimize)
 
 ## Install
 
 ```
-pip install scikit-optimize
+pip install scikit-optimize-w
 ```
 
 ## Getting started
@@ -28,8 +28,8 @@ def f(x):
 res = gp_minimize(f, [(-2.0, 2.0)])
 ```
 
-For more read our [introduction to bayesian optimization](https://scikit-optimize.github.io/notebooks/bayesian-optimization.html)
-and the other [examples](https://github.com/scikit-optimize/scikit-optimize/tree/master/examples).
+For more read the [introduction to bayesian optimization](https://scikit-optimize.github.io/notebooks/bayesian-optimization.html) offerec by scikit-optimize
+and the other [examples](https://github.com/mimba/scikit-optimize/tree/master/examples).
 
 
 ## Development
