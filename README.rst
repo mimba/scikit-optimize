@@ -41,13 +41,13 @@ The latest released version of scikit-optimize is v0.5.2, which you can install
 with:
 ::
 
-    pip install scikit-optimize
+    pip install scikit-optimize-w
 
 This installs an essential version of scikit-optimize. To install scikit-optimize
 with plotting functionality, you can instead do:
 ::
 
-    pip install 'scikit-optimize[plots]'
+    pip install 'scikit-optimize-w[plots]'
 
 This will install matplotlib along with scikit-optimize.
 
@@ -55,7 +55,7 @@ In addition there is a `conda-forge <https://conda-forge.org/>`_ package
 of scikit-optimize:
 ::
 
-    conda install -c conda-forge scikit-optimize
+    conda install -c conda-forge scikit-optimize-w
 
 Using conda-forge is probably the easiest way to install scikit-optimize on
 Windows.

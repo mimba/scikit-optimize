@@ -4,7 +4,6 @@ except ImportError:
     from distutils.core import setup
 import versioneer
 
-
 setup(name='scikit-optimize-w',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
@@ -16,8 +15,7 @@ setup(name='scikit-optimize-w',
       packages=['skopt', 'skopt.learning', 'skopt.optimizer', 'skopt.space',
                 'skopt.learning.gaussian_process'],
       install_requires=['pyaml', 'numpy', 'scipy>=0.14.0',
-                        'scikit-learn>=0.19.1'],
+                        'scikit-learn>=0.19.2'],
       extras_require={
-        'plots':  ["matplotlib"]
-        }
-      )
+          'plots': ["matplotlib"]
+      })
