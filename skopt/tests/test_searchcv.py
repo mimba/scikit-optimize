@@ -6,15 +6,36 @@ import numpy as np
 import pytest
 from sklearn.base import BaseEstimator
 from sklearn.base import clone
-from sklearn.datasets import load_iris, make_classification
+from sklearn.datasets import load_iris, make_classification, make_regression
+from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.svm import SVC, LinearSVC
+from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.testing import assert_greater
 
 from skopt import WeightedBayesSearchCV
 from skopt.space import Real, Categorical, Integer
+from skopt.tests.utils import assert_less_list
+
+
+def _fit_svr(n_jobs=1, n_points=1, cv=None):
+    """Utility function to fit a larger regression task with SVR
+    """
+
+    X, y = make_regression(n_samples=1000, n_features=20,
+                           n_informative=18, random_state=1)
+    opt = WeightedBayesSearchCV(
+        SVR(),
+        {
+            'C': Real(1e-3, 1e+3, prior='log-uniform'),
+            'gamma': Real(1e-3, 1e+1, prior='log-uniform'),
+            'degree': Integer(1, 3),
+        },
+        n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
+    )
+    opt.fit(X, y)
+    assert_greater(opt.score(X, y), 0.9)
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):
@@ -41,34 +62,86 @@ def _fit_svc(n_jobs=1, n_points=1, cv=None):
     assert_greater(opt.score(X, y), 0.9)
 
 
-def _fit_weighted_cv(n_jobs=1, n_points=1, cv=None):
+def _fit_class_weighted_cv(n_jobs=1, n_points=1, cv=None):
     """
-    Utility function to fit a larger classification task with SVC and randomly filled weighted samples
-    :return score
+    Utility function to fit a larger classification task with SVC and randomly filled sample weight
+    :return score accuracy
     """
-    X, y = make_classification(n_samples=1000, n_features=20, n_redundant=0,
-                                              n_informative=18, random_state=1,
-                                              n_clusters_per_class=1)
-
-    sample_weight = np.random.rand(len(y))
-    pipeline = Pipeline([('estimator',SVC())])
-    opt = WeightedBayesSearchCV(
-        pipeline,
-        {
+    score = _fit_class_weighted_cv_e(
+        estimator=SVC(),
+        search_spaces={
             'estimator__C': Real(1e-3, 1e+3, prior='log-uniform'),
             'estimator__gamma': Real(1e-3, 1e+1, prior='log-uniform'),
             'estimator__degree': Integer(1, 3),
         },
+        n_jobs=n_jobs,
+        n_points=n_points,
+        cv=cv)
+    assert_greater(score, 0.8)  # we are more tolerant in weighted case as weighting may be misleading
+    return score
+
+
+def _fit_class_weighted_cv_e(estimator, search_spaces, n_jobs=1, n_points=1, cv=None):
+    """
+    Utility function to fit a larger classification task with the provided estimator, search space and randomly filled sample weight
+    :return score accuracy
+    """
+    X, y = make_classification(n_samples=1000, n_features=20, n_redundant=0,
+                               n_informative=18, random_state=1,
+                               n_clusters_per_class=1)
+
+    sample_weight = np.random.rand(len(y))
+    pipeline = Pipeline([('estimator', estimator)])
+    opt = WeightedBayesSearchCV(
+        pipeline,
+        search_spaces=search_spaces,
         n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
     )
     opt.fit(X, y, sample_weight=sample_weight, sample_weight_steps=['estimator'])
     score = opt.score(X, y)
-    assert_greater(score, 0.8) # we are more tolerant in weighted case as weighting may be misleading
+    return score
+
+
+def _fit_reg_weighted_cv(n_jobs=1, n_points=1, cv=None):
+    """
+    Utility function to fit a larger regression task with SVR and randomly filled sample weight
+    :return score
+    """
+    score = _fit_reg_weighted_cv_e(
+        estimator=SVR(),
+        search_spaces={
+            'estimator__C': Real(1e-3, 1e+3, prior='log-uniform'),
+            'estimator__gamma': Real(1e-3, 1e+1, prior='log-uniform'),
+            'estimator__degree': Integer(1, 3)
+        },
+        n_jobs=n_jobs,
+        n_points=n_points,
+        cv=cv)
+    assert_greater(score, 0.8)  # we are more tolerant in weighted case as weighting may be misleading
+    return score
+
+
+def _fit_reg_weighted_cv_e(estimator, search_spaces, n_jobs=1, n_points=1, cv=None):
+    """
+    Utility function to fit a larger regression task with the provided estimator, search space and randomly filled sample weight
+    :return score
+    """
+    X, y = make_regression(n_samples=1000, n_features=20,
+                               n_informative=18, random_state=1)
+
+    sample_weight = np.random.rand(len(y))
+    pipeline = Pipeline([('estimator', estimator)])
+    opt = WeightedBayesSearchCV(
+        pipeline,
+        search_spaces=search_spaces,
+        n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
+    )
+    opt.fit(X, y, sample_weight=sample_weight, sample_weight_steps=['estimator'])
+    score = opt.score(X, y)
     return score
 
 
 def test_raise_errors():
-
     # check if empty search space is raising errors
     with pytest.raises(ValueError):
         WeightedBayesSearchCV(SVC(), {})
@@ -134,26 +207,67 @@ def test_searchcv_runs(surrogate, n_jobs, n_points, cv=None):
 
 
 @pytest.mark.slow_test
-def test_parallel_cv():
+def test_parallel_class_cv():
     """
-    Test whether parallel jobs work
+    Test whether parallel classification jobs work
     """
     _fit_svc(n_jobs=1, cv=5)
     _fit_svc(n_jobs=2, cv=5)
 
 
 @pytest.mark.slow_test
-def test_parallel_weighted_cv():
+def test_parallel_reg_cv():
     """
-    Test whether parallel weighted cv jobs work and produce different results because of different sample_weight.
+    Test whether parallel regression jobs work
+    """
+    _fit_svr(n_jobs=1, cv=5)
+    _fit_svr(n_jobs=2, cv=5)
+
+
+@pytest.mark.slow_test
+def test_parallel_class_weighted_cv():
+    """
+    Test whether parallel classification jobs work with sample weights. For each cv run it is expected to produce
+    different accuracy scores because of different sample_weight.
     Attention: This test may fail under extreme random sampling conditions
     """
-    score_1 = _fit_weighted_cv(n_jobs=1, cv=5)
-    score_2 = _fit_weighted_cv(n_jobs=1, cv=5)
-    score_3 = _fit_weighted_cv(n_jobs=1, cv=5)
+    score_1 = _fit_class_weighted_cv(n_jobs=1, cv=5)
+    score_2 = _fit_class_weighted_cv(n_jobs=1, cv=5)
+    score_3 = _fit_class_weighted_cv(n_jobs=1, cv=5)
     assert score_1 != score_2 or score_1 != score_3
     assert score_1 == pytest.approx(score_2, 0.1)
     assert score_1 == pytest.approx(score_3, 0.1)
+
+    dummy_estimator = DummyClassifier(strategy="stratified")
+    score_dummy_1 = _fit_class_weighted_cv_e(estimator=dummy_estimator, search_spaces={"estimator__random_state": Integer(1, 1000)}, n_jobs=1, cv=5)
+    assert_less_list(score_dummy_1, [score_1, score_2, score_3])
+    dummy_estimator_2 = DummyClassifier(strategy="most_frequent")
+    score_dummy_2 = _fit_class_weighted_cv_e(estimator=dummy_estimator_2, search_spaces={"estimator__random_state": Integer(1, 1000)}, n_jobs=1, cv=5)
+    assert_less_list(score_dummy_2, [score_1, score_2, score_3])
+    dummy_estimator_3 = DummyClassifier(strategy="uniform")
+    score_dummy_3 = _fit_class_weighted_cv_e(estimator=dummy_estimator_3, search_spaces={"estimator__random_state": Integer(1, 1000)}, n_jobs=1, cv=5)
+    assert_less_list(score_dummy_3, [score_1, score_2, score_3])
+
+
+def test_parallel_reg_weighted_cv():
+    """
+    Test whether parallel regression jobs work with sample weights. For each cv run it is expected to produce
+    different scores because of different sample_weight.
+    Attention: This test may fail under extreme random sampling conditions
+    """
+    score_1 = _fit_reg_weighted_cv(n_jobs=1, cv=5)
+    score_2 = _fit_reg_weighted_cv(n_jobs=1, cv=5)
+    score_3 = _fit_reg_weighted_cv(n_jobs=1, cv=5)
+    assert score_1 != score_2 or score_1 != score_3
+    assert score_1 == pytest.approx(score_2, 0.1)
+    assert score_1 == pytest.approx(score_3, 0.1)
+
+    dummy_estimator = DummyRegressor(strategy="mean")
+    score_dummy_1 = _fit_reg_weighted_cv_e(estimator=dummy_estimator, search_spaces={"estimator__constant": Integer(1, 1000)})
+    assert_less_list(score_dummy_1, [score_1, score_2, score_3])
+    dummy_estimator_2 = DummyRegressor(strategy="median")
+    score_dummy_2 = _fit_reg_weighted_cv_e(estimator=dummy_estimator_2, search_spaces={"estimator__constant": Integer(1, 1000)})
+    assert_less_list(score_dummy_2, [score_1, score_2, score_3])
 
 
 def test_searchcv_runs_multiple_subspaces():
@@ -202,7 +316,7 @@ def test_searchcv_runs_multiple_subspaces():
 
     # test if all subspaces are explored
     total_evaluations = len(opt.cv_results_['mean_test_score'])
-    assert total_evaluations == 1+1+2, "Not all spaces were explored!"
+    assert total_evaluations == 1 + 1 + 2, "Not all spaces were explored!"
 
 
 def test_searchcv_sklearn_sample_weight_compatibility():
@@ -269,7 +383,6 @@ def test_searchcv_sklearn_sample_weight_compatibility():
     assert total_evaluations_clone == 1 + 2
 
 
-
 def test_searchcv_sklearn_compatibility():
     """
     Test whether the BayesSearchCV is compatible with base sklearn methods
@@ -331,7 +444,7 @@ def test_searchcv_sklearn_compatibility():
 
     # test if expected number of subspaces is explored
     assert total_evaluations == 1
-    assert total_evaluations_clone == 1+2
+    assert total_evaluations_clone == 1 + 2
 
 
 def test_searchcv_reproducibility():

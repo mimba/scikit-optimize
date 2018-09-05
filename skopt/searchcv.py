@@ -536,8 +536,11 @@ class WeightedBayesSearchCV(BaseSearchCV):
         if sample_weight is not None:
             if not fit_params:
                 fit_params = {}
-            for step in sample_weight_steps:
-                fit_params[step + '__sample_weight'] = sample_weight
+            elif sample_weight_steps is None:
+                fit_params['sample_weight'] = sample_weight
+            else:
+                for step in sample_weight_steps:
+                    fit_params[step + '__sample_weight'] = sample_weight
 
         self.best_estimator_.fit(X, y, **(fit_params or {}))
         return self
