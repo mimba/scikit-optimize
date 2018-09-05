@@ -27,6 +27,7 @@ def test_cross_val_predict():
     dummy_y_pred = weighted_validation.cross_val_predict(estimator=dummy_estimator, X=X, y=y)
     dummy_mse = mean_squared_error(y_true=y, y_pred=dummy_y_pred)
     svr_pipeline = WeightedBayesSearchCV(
+        random_state=13,
         n_iter=11,
         cv=3,
         estimator=Pipeline([('estimator', SVR())]),
@@ -49,6 +50,7 @@ def test_cross_val_predict():
     # introduce sw_big: sample weight that weight big y higher than small y
     sw_big = (y - min) / (max - min)
     svr_pipeline_sw = WeightedBayesSearchCV(
+        random_state=13,
         n_iter=12,
         cv=3,
         estimator=Pipeline([('estimator', SVR())]),
@@ -67,6 +69,7 @@ def test_cross_val_predict():
     svr_pipeline_sw_mse_high = mean_squared_error(y_true=y, y_pred=svr_pipeline_sw_y_pred, sample_weight=sw_small)
     # build model optimized for small y
     svr_pipeline_sw = WeightedBayesSearchCV(
+        random_state=13,
         n_iter=12,
         cv=3,
         estimator=Pipeline([('estimator', SVR())]),
@@ -82,6 +85,7 @@ def test_cross_val_predict():
 
     # test sample weight aware mse of svr estimator trained with sample weight against svr
     svr_sw = WeightedBayesSearchCV(
+        random_state=13,
         n_iter=12,
         cv=3,
         estimator=SVR(),
