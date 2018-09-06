@@ -4,6 +4,7 @@ from lightgbm import LGBMRegressor
 from sklearn.datasets import make_regression
 from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.svm import SVR
 
 from skopt.ext import weighted_validation
 
@@ -22,7 +23,7 @@ def test_cross_val_predict():
     dummy_y_pred = weighted_validation.cross_val_predict(estimator=dummy_estimator, X=X, y=y)
     dummy_mse = mean_squared_error(y_true=y, y_pred=dummy_y_pred)
 
-    estimator = LGBMRegressor()
+    estimator = SVR()
     y_pred = weighted_validation.cross_val_predict(estimator=estimator, X=X, y=y)
     mse = mean_squared_error(y_true=y, y_pred=y_pred)
 
@@ -33,14 +34,14 @@ def test_cross_val_predict():
     sw_big = np.where(y > 0, 1, 0)
     sw_small = 1 - sw_big
 
-    estimator_sw = LGBMRegressor()
+    estimator_sw = SVR()
     y_pred_sw = weighted_validation.cross_val_predict(estimator=estimator_sw, X=X, y=y,
                                                       sample_weight=sw_big)
 
     # evaluate model optimized for big y to small weights
     mse_big = mean_squared_error(y_true=y, y_pred=y_pred_sw, sample_weight=sw_small)
     # build model optimized for small y
-    estimator_sw_small = LGBMRegressor()
+    estimator_sw_small = SVR()
     y_pred_sw_small = weighted_validation.cross_val_predict(
         estimator=estimator_sw_small, X=X, y=y, sample_weight=sw_small)
     mse_small = mean_squared_error(y_true=y, y_pred=y_pred_sw_small, sample_weight=sw_small)
