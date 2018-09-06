@@ -1,6 +1,4 @@
 import numpy as np
-import pytest
-from lightgbm import LGBMRegressor
 from sklearn.datasets import make_regression
 from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_squared_error
