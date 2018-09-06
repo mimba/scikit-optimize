@@ -5,3 +5,4 @@ matplotlib
 pytest
 nose
 pyaml
+lightgbm==2.1.2

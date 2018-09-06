@@ -37,7 +37,7 @@ def _fit_svr(n_jobs=1, n_points=1, cv=None):
         n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
     )
     opt.fit(X, y)
-    assert_greater(opt.score(X, y), -1000)
+    assert_greater(opt.score(X, y), -50000)
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):
@@ -122,7 +122,7 @@ def _fit_reg_weighted_cv(n_jobs=1, n_points=1, cv=None, random_state=13):
         n_jobs=n_jobs,
         n_points=n_points,
         cv=cv)
-    assert_greater(score, -70_000)  # we are more tolerant in weighted case as weighting may be misleading
+    assert_greater(score, -70000)  # we are more tolerant in weighted case as weighting may be misleading
     return score
 
 
