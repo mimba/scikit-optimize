@@ -447,9 +447,11 @@ def _fit_and_predict(estimator, X, y, sample_weight, sample_weight_steps, train,
     elif sample_weight_train is None:
         estimator.fit(X_train, y_train, **fit_params)
     else:
-        fit_params['sample_weight'] = sample_weight_train
         if sample_weight_steps is not None:
-            fit_params['sample_weight_steps'] = sample_weight_steps
+            for step in sample_weight_steps:
+                fit_params[step + '__sample_weight'] = sample_weight_train
+        else:
+            fit_params['sample_weight'] = sample_weight_train
         estimator.fit(X_train, y_train, **fit_params)
     func = getattr(estimator, method)
     predictions = func(X_test)
