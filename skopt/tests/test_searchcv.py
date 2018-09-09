@@ -37,7 +37,7 @@ def _fit_svr(n_jobs=1, n_points=1, cv=None):
         n_jobs=n_jobs, n_iter=11, n_points=n_points, cv=cv
     )
     opt.fit(X, y)
-    assert_greater(opt.score(X, y), -50000)
+    assert_greater(opt.score(X, y), -70000)
 
 
 def _fit_svc(n_jobs=1, n_points=1, cv=None):
