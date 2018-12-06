@@ -141,7 +141,7 @@ create a new issue and work through the following checklist:
 * check if the dependencies in ``setup.py`` are valid or need unpinning
 * check that the ``CHANGELOG.md`` is up to date
 * did the last build of master succeed?
-* create a `new release <https://github.com/scikit-optimize/scikit-optimize/releases>`__
+* create a `new release <https://github.com/mimba/scikit-optimize/releases>`__
 * ping `conda-forge <https://github.com/conda-forge/scikit-optimize-feedstock>`__
 
 Before making a release we usually create a release candidate. If the next
