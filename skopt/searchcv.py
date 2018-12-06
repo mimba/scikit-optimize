@@ -300,6 +300,9 @@ class WeightedBayesSearchCV(BaseSearchCV):
              pre_dispatch=pre_dispatch, error_score=error_score,
              return_train_score=return_train_score)
 
+    def _run_search(self, evaluate_candidates):
+        pass
+
     def _check_search_space(self, search_space):
         """Checks whether the search space argument is correct"""
 
