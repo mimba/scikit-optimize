@@ -15,7 +15,7 @@ setup(name='scikit-optimize-w',
       packages=['skopt', 'skopt.ext', 'skopt.learning', 'skopt.optimizer', 'skopt.space',
                 'skopt.learning.gaussian_process'],
       install_requires=['pyaml', 'numpy', 'scipy>=0.14.0',
-                        'scikit-learn>=0.19.2'],
+                        'scikit-learn>=0.20.0'],
       extras_require={
           'plots': ["matplotlib"]
       })
