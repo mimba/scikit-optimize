@@ -30,7 +30,11 @@ deploy:
   provider: pypi
   user: mimba
   password:
-    secure: "L0YkUtM1gHChMKhTUsZxydP4ZgQYYQ5199PHMcQFd5DOcTFvidIjPrt/jkGsqeOXvAChLyk5vlZEmMmJ9P6xqMZ6LPCLoVQCGrufiHrBscr4aswWucvo0AT3dIoYP8EBhR7eo9hFOsp3mMC4N89RmldgEPqMgMq1hgmu2fErBWFBOoc5pGYWW5V3yWxii3lNcdkdlFLRCbHGFT5e3wA+ehReMXXNAjFL4iW+5h87JM+5g3xwHPovMcMxNRMdPxhayT6/nBiriCGK3crmKpZd2jjlfQ8RryuB4keJTb4IlJTWIaUVfu1cd5R/A0DZMINJQLNKdwu2VUWc397xn4YYeHB6nUVnOhlGpO4z2dnn6JoNye++I7gx8d5dh7OBONO7KkTnF5DL+bRriwp8MLBhKbxZrvZLf6eY76nJH1Fw7NlWK+UrMilv8BG485wYKhzhhiNQScTIWTUYwPx6XDXq8z+32GP0tJEY60vMZVU7aJ//kklQOcwbJLmf3QMf0uCnfM3S3OxHvSJODIG1mRvcsyMjoCvnZbqqoi7lx4KbLpBw+bIG3fQ06nuYN3Tdro15B1M1l5nOX2b2qZRPcMeERUssjGH+XTQc2xR0qN7NNi2tpR1FnnBF1gEgSWcLt/hnYZUtNzbKL+aUDcomfpX8FA/NhvD3BmAabeU0qETjiHo="
+    # create the deployment password
+    # travis logout
+    # travis login
+    # travis encrypt <MIMBA_PYPI_PASSWORD>
+    secure: "LsqvGSCNwC+yciI90u3nKkYtYBGZoMdtRRdwHPPv0jqT6FLrr2M/84Cq2T+WrkZjO3A+Ei6eD5yHzhw55xJUy4XY7sjQU7EXD4XIDvZTlvxSkort/nqk3yt4boCaXApecoGqGHmqDZO5fguV9ECMdXnzvO043QDE1zXj7CY4x4jiQ9GPY6CwTNLq6Qt4RBR86gx/rcEGgqNy4mKBe9PKiRLJ4CfTCES4+wU0cZIzPMyQ4EX40F9DdKcDjesscLQaw++zfhGf/mAa8MeG1suz+Rs8XVuTw4eYTyCQD9m5SpVN7Dfg/jeAo0eHumMwQDlUjOb1kqfHwYvq9mI/J3psAcAv+SF342+dFXYH1zauOIKIcpe9kCSOpXYh63PdJJ28oodIY+ECvjyavfHkU7POFOBM5ogRih2bX/UoEyb2S4KgLGotj6mH4NSG/BS6Fl8PBrb1m81aNEXAWLeXd9m3vYIqQ0LzgT4/gMKadYpPZSijSrzg8rptKFQz64juG1JMQ5MLTD3wBcNfcSq3FzNAly0/fEYNH8Q5QOqrtpRxePfL4seI0PfRMkGR9ps6/yvsspQwpmIAQrmUVafjDgBYQNBh42rpb9Ia0liRY8H+2kMpym7UOfvj4VjHTbIwDjhV+7HoL8OHqfDVkA38N8jSh1ICwaSLPBUft/lUXyDw0+Q="
   # this line together with `setup.cfg` creates universal wheels as long as
   # skopt is a python only module (no compiled code)
   distributions: sdist bdist_wheel
