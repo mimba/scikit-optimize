@@ -76,7 +76,7 @@ except NameError:
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "2020.1.1"
+__version__ = "2020.1.2"
 
 if __SKOPT_SETUP__:
     import sys
