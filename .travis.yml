@@ -4,27 +4,32 @@ notifications:
   email: false
 
 cache:
+  apt: true
   directories:
-   - $HOME/.cache/pip
+  - $HOME/.cache/pip
+  - $HOME/.ccache
 
 env:
-  matrix:
-    - DISTRIB="conda" PYTHON_VERSION="3.5" COVERAGE="true"
-    - DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
+  global:
+    # Directory where tests are run from
+    - TEST_DIR=/tmp/skopt
+    - OMP_NUM_THREADS=4
+    - OPENBLAS_NUM_THREADS=4
+
+matrix:
+  include:
+    - name: "Python 3.7 - scikit 0.22.2.post1"
+        python: "3.7"
+        env: DISTRIB="conda" PYTHON_VERSION="3.7"
+          NUMPY_VERSION="1.18.3" SCIPY_VERSION="1.4.1" PYAML_VERSION="17.8.0"
+          SCIKIT_LEARN_VERSION="0.22.2.post1" MATPLOTLIB_VERSION="*" COVERAGE="true"
+          JOBLIB_VERSION="0.14.1"
 
 install: source build_tools/travis/install.sh
-
 script:
-  - if [ ${COVERAGE} == "true" ];
-    then pytest --cov=skopt --durations=10; else
-    pytest --durations=10;
-    fi
-
-after_success:
-  - if [ ${COVERAGE} == "true" ]; then
-    pip install codecov;
-    codecov;
-    fi
+  - bash build_tools/travis/test_script.sh
+  - bash build_tools/travis/test_docs.sh
+after_success: source build_tools/travis/after_success.sh
 
 deploy:
   provider: pypi
@@ -41,4 +46,4 @@ deploy:
   on:
     tags: true
     repo: mimba/scikit-optimize
-    condition: "$PYTHON_VERSION = 3.6"
+    condition: "$PYTHON_VERSION = 3.7"

@@ -4,9 +4,10 @@ import warnings
 
 import numpy as np
 import scipy.sparse as sp
+from sklearn import logger
 from sklearn.base import is_classifier, clone
 from sklearn.exceptions import FitFailedWarning
-from sklearn.externals.joblib import Parallel, delayed, logger
+from sklearn.externals.joblib import Parallel, delayed
 from sklearn.gaussian_process.kernels import Kernel as GPKernel
 from sklearn.metrics.scorer import check_scoring
 from sklearn.model_selection import check_cv
@@ -15,7 +16,6 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import indexable, safe_indexing
 from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _is_arraylike, _num_samples
-from skopt.ext import weighted_validation
 
 
 def weighted_safe_split(estimator, X, y, sample_weight, indices, train_indices=None):
@@ -363,7 +363,7 @@ def cross_val_predict(estimator, X, y=None, sample_weight=None, sample_weight_st
     # independent, and that it is pickle-able.
     parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
                         pre_dispatch=pre_dispatch)
-    prediction_blocks = parallel(delayed(weighted_validation._fit_and_predict)(
+    prediction_blocks = parallel(delayed(_fit_and_predict)(
         clone(estimator),
         X, y,
         sample_weight, sample_weight_steps,
