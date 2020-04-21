@@ -33,7 +33,7 @@ class WeightedBayesSearchCV(BaseSearchCV):
 
     In addition to scikit-optimize's version this fork implementes sample_weights.
 
-    BayesSearchCV implements a "fit" and a "score" method.
+    WeightedBayesSearchCV implements a "fit" and a "score" method.
     It also implements "predict", "predict_proba", "decision_function",
     "transform" and "inverse_transform" if they are implemented in the
     estimator used.
@@ -162,7 +162,7 @@ class WeightedBayesSearchCV(BaseSearchCV):
     Examples
     --------
 
-    >>> from skopt import BayesSearchCV
+    >>> from skopt import WeightedBayesSearchCV
     >>> # parameter ranges are specified by one of below
     >>> from skopt.space import Real, Categorical, Integer
     >>>
@@ -176,7 +176,7 @@ class WeightedBayesSearchCV(BaseSearchCV):
     ...                                                     random_state=0)
     >>>
     >>> # log-uniform: understand as search over p = exp(x) by varying x
-    >>> opt = BayesSearchCV(
+    >>> opt = WeightedBayesSearchCV(
     ...     SVC(),
     ...     {
     ...         'C': Real(1e-6, 1e+6, prior='log-uniform'),

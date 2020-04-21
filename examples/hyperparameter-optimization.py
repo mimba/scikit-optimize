@@ -26,7 +26,7 @@ hopefully resulting in equivalent or better solutions, but within less
 evaluations.
 
 Note: scikit-optimize provides a dedicated interface for estimator tuning via
-:class:`BayesSearchCV` class which has a similar interface to those of
+:class:`WeightedBayesSearchCV` class which has a similar interface to those of
 :obj:`sklearn.model_selection.GridSearchCV`. This class uses functions of skopt to perform hyperparameter
 search efficiently. For example usage of this class, see
 :ref:`sphx_glr_auto_examples_sklearn-gridsearchcv-replacement.py`

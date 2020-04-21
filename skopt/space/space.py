@@ -91,7 +91,7 @@ def check_dimension(dimension, transform=None):
         raise ValueError("Dimension has to be a list or tuple.")
 
     # A `Dimension` described by a single value is assumed to be
-    # a `Categorical` dimension. This can be used in `BayesSearchCV`
+    # a `Categorical` dimension. This can be used in `WeightedBayesSearchCV`
     # to define subspaces that fix one value, e.g. to choose the
     # model type, see "sklearn-gridsearchcv-replacement.py"
     # for examples.

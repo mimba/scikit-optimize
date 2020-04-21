@@ -296,7 +296,7 @@ def test_parallel_reg_weighted_cv():
 
 def test_searchcv_runs_multiple_subspaces():
     """
-    Test whether the BayesSearchCV runs without exceptions when
+    Test whether the WeightedBayesSearchCV runs without exceptions when
     multiple subspaces are given.
     """
 
@@ -349,7 +349,7 @@ def test_searchcv_runs_multiple_subspaces():
 
 def test_searchcv_sklearn_sample_weight_compatibility():
     """
-    Test whether the BayesSearchCV is compatible with sklearn methods having sample weights integrated.
+    Test whether the WeightedBayesSearchCV is compatible with sklearn methods having sample weights integrated.
     """
     X, y = load_iris(True)
     X_train, X_test, y_train, y_test = train_test_split(
@@ -413,7 +413,7 @@ def test_searchcv_sklearn_sample_weight_compatibility():
 
 def test_searchcv_sklearn_compatibility():
     """
-    Test whether the BayesSearchCV is compatible with base sklearn methods
+    Test whether the WeightedBayesSearchCV is compatible with base sklearn methods
     such as clone, set_params, get_params.
     """
 
@@ -477,7 +477,7 @@ def test_searchcv_sklearn_compatibility():
 
 def test_searchcv_reproducibility():
     """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    Test whether results of WeightedBayesSearchCV can be reproduced with a fixed
     random state.
     """
 
@@ -525,7 +525,7 @@ def test_searchcv_reproducibility():
 @pytest.mark.fast_test
 def test_searchcv_rank():
     """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    Test whether results of WeightedBayesSearchCV can be reproduced with a fixed
     random state.
     """
 
@@ -561,7 +561,7 @@ def test_searchcv_rank():
 
 def test_searchcv_refit():
     """
-    Test whether results of BayesSearchCV can be reproduced with a fixed
+    Test whether results of WeightedBayesSearchCV can be reproduced with a fixed
     random state.
     """
 
@@ -604,7 +604,7 @@ def test_searchcv_refit():
 
 
 def test_searchcv_callback():
-    # Test whether callback is used in BayesSearchCV and
+    # Test whether callback is used in WeightedBayesSearchCV and
     # whether is can be used to interrupt the search loop
 
     X, y = load_iris(True)
@@ -637,7 +637,7 @@ def test_searchcv_callback():
 
 
 def test_searchcv_total_iterations():
-    # Test the total iterations counting property of BayesSearchCV
+    # Test the total iterations counting property of WeightedBayesSearchCV
 
     opt = WeightedBayesSearchCV(
         DecisionTreeClassifier(),
@@ -653,7 +653,7 @@ def test_searchcv_total_iterations():
 
 def test_search_cv_internal_parameter_types():
     # Test whether the parameters passed to the
-    # estimator of the BayesSearchCV are of standard python
+    # estimator of the WeightedBayesSearchCV are of standard python
     # types - float, int, str
 
     # This is estimator is used to check whether the types provided

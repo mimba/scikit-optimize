@@ -44,7 +44,7 @@ import matplotlib.pyplot as plt
 #
 # A minimal example of optimizing hyperparameters of SVC (Support Vector machine Classifier) is given below.
 
-from skopt import BayesSearchCV
+from skopt import WeightedBayesSearchCV
 from sklearn.datasets import load_digits
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
@@ -53,7 +53,7 @@ X, y = load_digits(10, True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=0)
 
 # log-uniform: understand as search over p = exp(x) by varying x
-opt = BayesSearchCV(
+opt = WeightedBayesSearchCV(
     SVC(),
     {
         'C': (1e-6, 1e+6, 'log-uniform'),
@@ -79,7 +79,7 @@ print("test score: %s" % opt.score(X_test, y_test))
 # example of such search over parameters of Linear SVM, Kernel SVM, and
 # decision trees is given below.
 
-from skopt import BayesSearchCV
+from skopt import WeightedBayesSearchCV
 from skopt.space import Real, Categorical, Integer
 from skopt.plots import plot_objective, plot_histogram
 
@@ -115,7 +115,7 @@ svc_search = {
     'model__kernel': Categorical(['linear', 'poly', 'rbf']),
 }
 
-opt = BayesSearchCV(
+opt = WeightedBayesSearchCV(
     pipe,
     # (parameter space, # of evaluations)
     [(svc_search, 40), (linsvc_search, 16)],
@@ -146,7 +146,7 @@ plt.show()
 # Progress monitoring and control using `callback` argument of `fit` method
 # =========================================================================
 #
-# It is possible to monitor the progress of :class:`BayesSearchCV` with an event
+# It is possible to monitor the progress of :class:`WeightedBayesSearchCV` with an event
 # handler that is called on every step of subspace exploration. For single job
 # mode, this is called on every evaluation of model configuration, and for
 # parallel mode, this is called when n_jobs model configurations are evaluated
@@ -158,14 +158,14 @@ plt.show()
 #
 # An example usage is shown below.
 
-from skopt import BayesSearchCV
+from skopt import WeightedBayesSearchCV
 
 from sklearn.datasets import load_iris
 from sklearn.svm import SVC
 
 X, y = load_iris(True)
 
-searchcv = BayesSearchCV(
+searchcv = WeightedBayesSearchCV(
     SVC(gamma='scale'),
     search_spaces={'C': (0.01, 100.0, 'log-uniform')},
     n_iter=10,
@@ -193,14 +193,14 @@ searchcv.fit(X, y, callback=on_step)
 # iterations it will take to explore all subspaces. This can be
 # calculated with `total_iterations` property, as in the code below.
 
-from skopt import BayesSearchCV
+from skopt import WeightedBayesSearchCV
 
 from sklearn.datasets import load_iris
 from sklearn.svm import SVC
 
 X, y = load_iris(True)
 
-searchcv = BayesSearchCV(
+searchcv = WeightedBayesSearchCV(
     SVC(),
     search_spaces=[
         ({'C': (0.1, 1.0)}, 19),  # 19 iterations for this subspace
