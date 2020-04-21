@@ -19,11 +19,11 @@ env:
 matrix:
   include:
     - name: "Python 3.7 - scikit 0.22.2.post1"
-        python: "3.7"
-        env: DISTRIB="conda" PYTHON_VERSION="3.7"
-          NUMPY_VERSION="1.18.3" SCIPY_VERSION="1.4.1" PYAML_VERSION="17.8.0"
-          SCIKIT_LEARN_VERSION="0.22.2.post1" MATPLOTLIB_VERSION="*" COVERAGE="true"
-          JOBLIB_VERSION="0.14.1"
+      python: "3.7"
+      env: DISTRIB="conda" PYTHON_VERSION="3.7"
+        NUMPY_VERSION="1.18.3" SCIPY_VERSION="1.4.1" PYAML_VERSION="17.8.0"
+        SCIKIT_LEARN_VERSION="0.22.2.post1" MATPLOTLIB_VERSION="*" COVERAGE="true"
+        JOBLIB_VERSION="0.14.1"
 
 install: source build_tools/travis/install.sh
 script:
