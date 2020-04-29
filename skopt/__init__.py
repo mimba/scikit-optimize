@@ -89,11 +89,13 @@ else:
     from . import acquisition
     from . import benchmarks
     from . import callbacks
+    from . import ext
     from . import learning
     from . import optimizer
 
     from . import space
     from . import sampler
+    from .ext import weighted_validation
     from .optimizer import dummy_minimize
     from .optimizer import forest_minimize
     from .optimizer import gbrt_minimize
@@ -109,6 +111,8 @@ else:
         "acquisition",
         "benchmarks",
         "callbacks",
+        "ext",
+        "weighted_validation",
         "learning",
         "optimizer",
         "plots",
