@@ -4,52 +4,40 @@ import warnings
 
 import numpy as np
 import scipy.sparse as sp
+from joblib import delayed, Parallel
 from sklearn import logger
 from sklearn.base import is_classifier, clone
 from sklearn.exceptions import FitFailedWarning
-from sklearn.externals.joblib import Parallel, delayed
-from sklearn.gaussian_process.kernels import Kernel as GPKernel
-from sklearn.metrics.scorer import check_scoring
 from sklearn.model_selection import check_cv
 from sklearn.model_selection._validation import _check_is_permutation
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils import indexable, safe_indexing
-from sklearn.utils.multiclass import type_of_target
-from sklearn.utils.validation import _is_arraylike, _num_samples
+from sklearn.utils import indexable, _safe_indexing
+from sklearn.utils.validation import _is_arraylike, _num_samples, _check_fit_params
 
 
 def weighted_safe_split(estimator, X, y, sample_weight, indices, train_indices=None):
     """Create subset of dataset and properly handle kernels."""
-    if hasattr(estimator, 'kernel') and callable(estimator.kernel) \
-       and not isinstance(estimator.kernel, GPKernel):
-        # cannot compute the kernel values with custom function
-        raise ValueError("Cannot use a custom kernel function. "
-                         "Precompute the kernel matrix instead.")
-
-    if not hasattr(X, "shape"):
-        if getattr(estimator, "_pairwise", False):
+    if getattr(estimator, "_pairwise", False):
+        if not hasattr(X, "shape"):
             raise ValueError("Precomputed kernels or affinity matrices have "
                              "to be passed as arrays or sparse matrices.")
-        X_subset = [X[idx] for idx in indices]
-    else:
-        if getattr(estimator, "_pairwise", False):
-            # X is a precomputed square kernel matrix
-            if X.shape[0] != X.shape[1]:
-                raise ValueError("X should be a square kernel matrix")
-            if train_indices is None:
-                X_subset = X[np.ix_(indices, indices)]
-            else:
-                X_subset = X[np.ix_(indices, train_indices)]
+        # X is a precomputed square kernel matrix
+        if X.shape[0] != X.shape[1]:
+            raise ValueError("X should be a square kernel matrix")
+        if train_indices is None:
+            X_subset = X[np.ix_(indices, indices)]
         else:
-            X_subset = safe_indexing(X, indices)
+            X_subset = X[np.ix_(indices, train_indices)]
+    else:
+        X_subset = _safe_indexing(X, indices)
 
     if y is not None:
-        y_subset = safe_indexing(y, indices)
+        y_subset = _safe_indexing(y, indices)
     else:
         y_subset = None
 
     if sample_weight is not None:
-        sample_weight_subset = safe_indexing(sample_weight, indices)
+        sample_weight_subset = _safe_indexing(sample_weight, indices)
     else:
         sample_weight_subset = None
 
@@ -225,7 +213,7 @@ def _index_param_value(X, v, indices):
         return v
     if sp.issparse(v):
         v = v.tocsr()
-    return safe_indexing(v, indices)
+    return _safe_indexing(v, indices)
 
 
 def _score(estimator, X_test, y_test, sample_weight_test, scorer):
@@ -436,8 +424,7 @@ def _fit_and_predict(estimator, X, y, sample_weight, sample_weight_steps, train,
     """
     # Adjust length of sample weights
     fit_params = fit_params if fit_params is not None else {}
-    fit_params = dict([(k, _index_param_value(X, v, train))
-                      for k, v in fit_params.items()])
+    fit_params = _check_fit_params(X, fit_params, train)
 
     X_train, y_train, sample_weight_train = weighted_safe_split(estimator, X, y, sample_weight, train)
     X_test, _, _ = weighted_safe_split(estimator, X, y, sample_weight, test, train)
